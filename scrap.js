@@ -18,6 +18,10 @@ ctx.canvas.height = window.innerHeight;
 
 let isMouseDown = false;
 
+const onEvent = ['mousedown', 'touchstart'];
+const moveEvents = ['mousemove', 'touchmove'];
+const offEvents = ['mouseup', 'touchend'];
+
 undoButton.addEventListener("click", () => {
   event.stopPropagation();
   undo();
@@ -28,19 +32,31 @@ clearButton.addEventListener("click", () => {
   clear();
 });
 
-canvas.addEventListener("mousedown", () => {
-  isMouseDown = true;
-});
+onEvent.forEach(event => {
+  canvas.addEventListener(event, () => {
+    isMouseDown = true;
+  });
+})
 
-canvas.addEventListener("mouseup", () => {
-  pushToSnapshots();
-  isMouseDown = false;
-});
+offEvents.forEach(event => {
+  canvas.addEventListener(event, () => {
+    pushToSnapshots();
+    isMouseDown = false;
+  });
+})
 
-canvas.addEventListener('mousemove', event => {
-  if (isMouseDown)
-    ctx.drawImage(image, event.clientX - halfImageWidth, event.clientY  - halfImageHeight);
-});
+moveEvents.forEach(event => {
+  canvas.addEventListener(event, event => {
+    if (!isMouseDown)
+      return;
+    if (event instanceof TouchEvent) {
+      const { clientX, clientY } = event.touches[0];
+      ctx.drawImage(image, clientX - halfImageWidth, clientY  - halfImageHeight);
+    }
+    else
+      ctx.drawImage(image, event.clientX - halfImageWidth, event.clientY  - halfImageHeight);
+  });
+})
 
 function clear () {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -52,7 +68,7 @@ function pushToSnapshots () {
 }
 
 function removeLastSnapshot () {
-  snapshotsArray.splice(snapshotsArray.length - 1, 1);
+  snapshotsArray.pop();
 }
 
 function undo() {
